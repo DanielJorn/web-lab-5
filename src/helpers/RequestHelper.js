@@ -1,24 +1,29 @@
-import { token } from "../store";
+import { token, error, counter } from "../store";
 import { get } from "svelte/store";
 class RequestHelper {
   constructor() {
-    this.API_URL = "https://web-labaa-5.herokuapp.com/v1/graphql";
+    this.API_URL = HTTP_LINK;
   }
   async fetchGraphQL(operationsDoc, operationName, variables) {
-    const result = await fetch(this.API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        query: operationsDoc,
-        variables: variables,
-        operationName: operationName,
-      }),
-      headers: {
-        // "x-hasura-admin-secret": "secret",
-        Authorization: `Bearer ${get(token)}`,
-      },
-    });
+    try {
+      const result = await fetch(this.API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          query: operationsDoc,
+          variables: variables,
+          operationName: operationName,
+        }),
+        headers: {
+          Authorization: `Bearer ${get(token)}`,
+        },
+      });
+      return result.json();
+    } catch (e) {
+      console.error(e);
+      counter.update((n) => n - 1);
 
-    return await result.json();
+      error.set(e.message);
+    }
   }
 
   fetchMyQuery(operationsDoc) {
@@ -26,11 +31,14 @@ class RequestHelper {
   }
 
   async startFetchMyQuery(operationsDoc) {
+    counter.update((n) => n + 1);
     const { errors, data } = await this.fetchMyQuery(operationsDoc);
+    counter.update((n) => n - 1);
 
     if (errors) {
       // handle those errors like a pro
       console.error(errors);
+      throw new Error(errors[0].message);
     }
 
     // do something great with this precious data
@@ -42,15 +50,19 @@ class RequestHelper {
   }
 
   async startExecuteMyMutation(operationsDoc) {
+    counter.update((n) => n + 1);
     const { errors, data } = await this.executeMyMutation(operationsDoc);
+    counter.update((n) => n - 1);
 
     if (errors) {
       // handle those errors like a pro
       console.error(errors);
+      throw new Error(errors[0].message);
     }
 
     // do something great with this precious data
     console.log(data);
+    return data;
   }
 }
 
