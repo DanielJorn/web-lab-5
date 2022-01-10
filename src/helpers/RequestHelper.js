@@ -1,4 +1,4 @@
-import { token, error, counter } from "../store";
+import { token, counter } from "../store";
 import { get } from "svelte/store";
 class RequestHelper {
   constructor() {
@@ -20,9 +20,7 @@ class RequestHelper {
       return result.json();
     } catch (e) {
       console.error(e);
-      counter.update((n) => n - 1);
-
-      error.set(e.message);
+      $error = e.message;
     }
   }
 
